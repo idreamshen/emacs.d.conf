@@ -1,1 +1,536 @@
-/Users/shenxingyu/.emacs.d/init-core.org
+* 包管理
+  #+begin_src emacs-lisp
+    (condition-case nil
+	(require 'use-package)
+      (file-error
+       (require 'package)
+       (setq package-archives '(("gnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+				("melpa" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/"))
+	     )
+       (package-initialize)
+       (package-refresh-contents)
+       (package-install 'use-package)
+       (require 'use-package)))
+
+    (setq package-archives '(("gnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+			     ("melpa" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
+  #+end_src
+
+* 自定义文件
+  #+begin_src emacs-lisp
+    (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+    (load custom-file)
+  #+end_src
+
+* 高亮当前行
+#+begin_src emacs-lisp
+  (global-hl-line-mode 1)
+  (set-face-background 'hl-line "#7a378b")
+#+end_src
+* 主题
+  #+begin_src emacs-lisp
+    (use-package color-theme-sanityinc-tomorrow
+      :ensure t
+      :init
+      (color-theme-sanityinc-tomorrow-eighties)
+      )
+  #+end_src
+
+* Org
+** 开启 org-tempo
+   #+begin_src emacs-lisp
+    (when (version<= "9.2" (org-version))
+      (require 'org-tempo))
+   #+end_src
+** 其他
+   #+begin_src emacs-lisp
+     (setq org-scheduled-past-days 1)
+     (setq org-log-done 'time)
+     (global-set-key (kbd "C-c a") 'org-agenda)
+     (global-set-key (kbd "C-c c") 'org-capture)
+     (setq org-default-notes-file "~/.emacs.d/org/inbox.org")
+     (setq org-directory "~/.emacs.d/org")
+     (setq org-agenda-files '("~/.emacs.d/org"))
+
+     ;; 设置 org-capture 模板
+     (setq org-capture-templates nil)
+     (add-to-list 'org-capture-templates
+                  '("t" "Tasks 日常任务" entry
+                    (file+headline "~/.emacs.d/org/task.org" "任务")
+                    "* TODO %?\n  %T\n"))
+     (add-to-list 'org-capture-templates
+                  '("n" "Notes 笔记" entry
+                    (file+headline "~/.emacs.d/org/note.org" "笔记")
+                    "* %?\n  %T\n"))
+     (add-to-list 'org-capture-templates
+                  '("k" "Knowledges 知识" entry
+                    (file+headline "~/.emacs.d/org/knowledge.org" "知识")
+                    "* %?\n  %T\n"))
+     (add-to-list 'org-capture-templates
+                  '("c" "Calendar 行程" entry
+                    (file+headline "~/.emacs.d/org/calendar.org" "行程")
+                    "* TODO %?\n  SCHEDULED: %^T DEADLINE: %^T\n"))
+     (add-to-list 'org-capture-templates
+                  '("p" "Password 密码" entry
+                    (file+headline "~/.emacs.d/org/password.org" "Passwords")
+                    "* %U %^{descption} %^{url} %^G\n  username: %^{username}\n  password: %^{password}"))
+
+     (use-package ob-restclient
+       :ensure t)
+
+     ;; active Babel languages
+     (org-babel-do-load-languages
+      'org-babel-load-languages
+      '((sql . t)
+        (restclient . t)
+        (shell . t)
+        (python . t)
+        (java . t)
+        (js . t)
+        (ledger . t)
+        (plantuml . t)
+        ))
+     (setq org-plantuml-jar-path
+           (expand-file-name "~/plantuml.jar"))
+
+     (setq org-babel-python-command "python3")
+
+     ;; add additional languages with '((language . t)))
+
+     ;; 忽略 babel 执行二次确认
+     (setq org-confirm-babel-evaluate nil)
+
+   #+end_src
+
+** 自动展示图片
+#+begin_src emacs-lisp
+(add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images)
+#+end_src   
+** latex-pdf
+#+begin_src emacs-lisp    
+  (setq org-latex-pdf-process '("xelatex -interaction nonstopmode %f" "xelatex -interaction nonstopmode %f"))
+#+end_src   
+* 行号
+  #+begin_src emacs-lisp
+    (when (version<= "26.0.50" emacs-version)
+      (global-display-line-numbers-mode))
+  #+end_src
+* 菜单
+  #+begin_src emacs-lisp
+    (menu-bar-mode -1)
+  #+end_src
+
+* 括号匹配
+  #+begin_src emacs-lisp
+    (show-paren-mode 1)
+  #+end_src
+
+* GC
+  设置为 100M
+  #+begin_src emacs-lisp
+  (setq gc-cons-threshold 100000000)
+  #+end_src
+
+* 语言设置
+  #+begin_src emacs-lisp
+    (set-language-environment "UTF-8")
+    (set-default-coding-systems 'utf-8)
+    (set-buffer-file-coding-system 'utf-8-unix)
+    (set-clipboard-coding-system 'utf-8-unix)
+    (set-file-name-coding-system 'utf-8-unix)
+    (set-keyboard-coding-system 'utf-8-unix)
+    (set-next-selection-coding-system 'utf-8-unix)
+    (set-selection-coding-system 'utf-8-unix)
+    (set-terminal-coding-system 'utf-8-unix)
+    (setq locale-coding-system 'utf-8)
+    (prefer-coding-system 'utf-8)
+  #+end_src
+
+* exec-path-from-shell 环境变量
+  #+begin_src emacs-lisp
+  (use-package exec-path-from-shell
+  :ensure
+  :init
+  (when (memq window-system '(mac ns))
+    (setenv "SHELL" "/bin/zsh")
+    (exec-path-from-shell-initialize)
+    (exec-path-from-shell-copy-envs
+     '("PATH" "LANG" "JAVA_HOME" "CLASSPATH"))))
+  #+end_src
+
+* 字体
+  #+begin_src emacs-lisp
+    (use-package cnfonts
+      :ensure t
+      :config
+      (cnfonts-enable)
+      (set-face-attribute 'default nil
+			  :family "Source Code Pro"
+			  :weight 'normal
+			  :width 'normal
+			  :height 140)
+      )
+  #+end_src
+
+* helm
+  #+begin_src emacs-lisp
+    (use-package helm
+      :ensure t
+      :bind
+      (("M-x" . helm-M-x)
+       ("C-x C-f" . helm-find-files)
+       ("C-x b" . helm-mini)
+       ("M-s o" . helm-occur)
+       )
+      :config
+      (setq recentf-max-saved-items 100)
+      )
+  #+end_src
+
+* projectile
+  #+begin_src emacs-lisp
+    (use-package projectile
+      :ensure t
+      :config
+      (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+      (projectile-mode +1)
+      (setq projectile-ignored-projects '("~/.emacs.d/"))
+      (setq projectile-globally-ignored-file-suffixes '("min.js"))
+      )
+
+    (use-package helm-projectile
+      :ensure t
+      :config
+					    ;(define-key projectile-mode-map (kbd "C-c p") 'helm-projectile-command-map)
+      (helm-projectile-on)
+      )
+  #+end_src
+
+* yasnippet
+  #+begin_src emacs-lisp
+    (use-package yasnippet :ensure t)
+
+    (use-package yasnippet-snippets :ensure t)
+
+    (add-hook 'prog-mode-hook (lambda ()
+				(yas-minor-mode t)
+				))
+  #+end_src
+
+* lsp
+  #+begin_src 
+    (use-package lsp-mode
+      :ensure t
+      :bind
+      ("M-?" . lsp-find-references)
+      (:map lsp-command-map
+            ("c l" . lsp-java-create-local))
+      :init
+      ;; (setq lsp-prefer-flymake t)
+      (setq lsp-flycheck-live-reporting nil)
+      (setq lsp-enable-file-watchers nil)
+      (setq lsp-enable-on-type-formatting nil)
+      (setq lsp-enable-text-document-color nil)
+      (setq lsp-log-io nil)
+      (setq lsp-diagnostic-package :none)
+      (setq lsp-enable-symbol-highlighting nil)
+      (setq lsp-enable-folding nil)
+      (setq lsp-enable-links nil)
+      (setq company-lsp-cache-candidates 'auto)
+      ;; (setq lsp-keep-workspace-alive nil)
+      ;; (setq lsp-prefer-capf t)
+      ;; (setq lsp-client-packages '(lsp-clients))
+      )
+
+    (setq lsp-idle-delay 1.000)
+
+    (use-package helm-lsp
+      :ensure t)
+
+    (use-package company-lsp :ensure t)
+
+    (setq lsp-java-jdt-download-url "https://mirrors.tuna.tsinghua.edu.cn/eclipse/jdtls/snapshots/jdt-language-server-latest.tar.gz")
+
+    (use-package lsp-java :ensure t
+      :init
+      (add-hook 'java-mode-hook #'lsp)
+      :config
+      (setq lsp-java-vmargs
+            (list "-noverify"
+                  "-Xmx3G"
+                  "-XX:+UseG1GC"
+                  "-XX:+UseStringDeduplication"
+                  "-javaagent:/Users/shenxingyu/.m2/repository/org/projectlombok/lombok/1.16.16/lombok-1.16.16.jar"
+                  "-Xbootclasspath/a:/Users/shenxingyu/.m2/repository/org/projectlombok/lombok/1.16.16/lombok-1.16.16.jar"))
+      (setq lsp-java-autobuild-enabled t)
+      )
+  #+end_src
+
+* eglot
+  #+begin_src 
+    (use-package eglot
+      :ensure t
+      :config
+      (add-hook 'eglot--managed-mode-hook (lambda () (flymake-mode -1)))
+      (add-hook 'java-mode-hook 'eglot-ensure))
+  #+end_src
+
+* dap
+** dap 配置
+#+begin_src
+  (use-package dap-mode
+    :ensure t :after lsp-mode
+    :config
+    (dap-mode t)
+    (dap-ui-mode t)
+    (dap-register-debug-template
+     "VPGAME DEBUG Dev"
+     (list :type "java"
+       :request "launch"
+       :args ""
+       :vmArgs "-ea -Dspring.profiles.active=dev"
+       :cwd nil
+       :stopOnEntry :json-false
+       :host "localhost"
+       :request "launch"
+       :modulePaths []
+       :classPaths nil
+       :projectName nil
+       :mainClass nil))
+
+    )
+
+
+  (use-package dap-java :after (lsp-java))
+
+#+end_src   
+* indent
+  #+begin_src emacs-lisp
+    (setq-default indent-tabs-mode nil)
+    (setq-default tab-width 4)
+    (setq indent-line-function 'insert-tab)
+  #+end_src
+
+* expand-region
+  #+begin_src emacs-lisp
+    (use-package expand-region
+      :ensure t
+      :bind
+      ("C-=" . 'er/expand-region)
+      )
+  #+end_src
+
+* whitespace
+  #+begin_src emacs-lisp
+    (add-hook 'prog-mode-hook (lambda ()
+				(setq whitespace-style '(face tabs empty trailing))
+				(whitespace-mode t)
+				))
+  #+end_src
+
+* company
+  #+begin_src emacs-lisp
+    (global-company-mode t)
+    (define-key company-active-map (kbd "M-n") nil)
+    (define-key company-active-map (kbd "M-p") nil)
+    (define-key company-active-map (kbd "C-n") #'company-select-next)
+    (define-key company-active-map (kbd "C-p") #'company-select-previous)
+    (setq company-minimum-prefix-length 2
+          company-idle-delay 0.0) ;; default is 0.2
+    (setq company-dabbrev-char-regexp "\\(\\sw\\|\\s_\\|-\\)")
+    ;; (global-company-mode)
+    (setq company-dabbrev-downcase nil)
+  #+end_src
+
+* magit
+  #+begin_src emacs-lisp
+    (use-package magit 
+      :ensure t
+      :config
+      (setq auto-revert-check-vc-info t))
+  #+end_src
+
+* rg
+  #+begin_src emacs-lisp
+    (use-package helm-rg :ensure t)
+  #+end_src
+
+* dash
+  #+begin_src emacs-lisp
+    (use-package helm-dash
+      :ensure t
+      :init
+      (setq dash-docs-docsets-path "/Users/shenxingyu/.emacs.d/docsets")
+      :config
+      (setq helm-dash-browser-func 'eww)
+      (setq helm-dash-common-docsets '("JAVA" "Redis" "Docker" "MySQL" "Spring Framework"))
+      )
+  #+end_src
+
+* auto backup
+http://ergoemacs.org/emacs/emacs_set_backup_into_a_directory.html
+#+begin_src emacs-lisp    
+  (setq make-backup-files nil)
+#+end_src   
+
+* auto save
+http://ergoemacs.org/emacs/emacs_auto_save.html
+#+begin_src emacs-lisp    
+  ;; stop creating those #auto-save# files
+  (setq auto-save-default nil)
+#+end_src   
+
+* hungry
+  #+begin_src
+    (c-toggle-auto-hungry-state t)
+  #+end_src
+* spring-restart
+#+begin_src emacs-lisp    
+  (defun spring-restart ()
+    (interactive)
+    (projectile-compile-project)
+    (dap-debug-restart)
+    (dap-go-to-output-buffer)
+    )
+#+end_src   
+* line-number
+#+begin_src emacs-lisp
+(line-number-mode nil)
+#+end_src
+* leader-mode
+#+begin_src emacs-lisp
+  (use-package ledger-mode
+    :ensure t
+    )
+#+end_src   
+* elfeed
+#+begin_src emacs-lisp
+  (use-package elfeed
+    :ensure t
+    :config
+    (setq elfeed-feeds
+          '("https://www.chenshaowen.com/atom.xml"
+            "http://blog.gavinzh.com/feed"
+            "https://wuchong.me/atom.xml"
+            "https://aylei.github.io/index.xml"
+            "https://coolshell.cn/feed"
+            "http://www.skywind.me/blog/feed"
+            "http://www.ruanyifeng.com/blog/atom.xml"
+            "https://www.biaodianfu.com/feed"
+            "http://www.wangtianyi.top/atom.xml"
+            "http://www.zmonster.me/atom.xml"
+            "https://linuxtoy.org/feeds/all.atom.xml"
+            "https://lujun9972.github.io/rss.xml"
+            "http://liqi.io/feed/"
+            "https://bitinn.net/feed/"
+  ;          "http://readhub.bayes.cafe/rss?channel=topics"
+            "https://liuzhihang.com/atom.xml"
+            "https://tech.meituan.com/feed/"
+            "https://rsshub.app/zzz"
+  ;          "https://www.infoq.cn/feed.xml"
+            "http://feed.cnblogs.com/blog/u/236150/rss/"
+            "http://jm.taobao.org/atom.xml"
+            "http://luokangyuan.com/rss/"
+            "https://www.wangfeng.pro/atom.xml"
+  ;          "http://www.techweb.com.cn/rss/allnews.xml"
+            "http://www.ityouknow.com/feed.xml"
+            "https://www.hollischuang.com/feed"
+            "http://www.justdojava.com/atom.xml"
+            "http://www.itwanger.com/feed.xml"
+            "https://fookwood.com/feed"
+            "http://www.jiangxinlingdu.com/feed.xml"
+            "https://greatdk.com/feed"
+            "https://blog.52itstyle.vip/feed/"
+            "https://www.ffeeii.com/feed"
+            ;"https://feedpress.me/wx-ainlp"
+            "https://feedpress.me/wx-catcoder"
+            "https://feedpress.me/wx-latenews"
+            "https://feedpress.me/wx-lxiaoshengmiao"
+            "https://feedpress.me/wx-dreamytalks"
+            "https://www.throwable.club/atom.xml"
+            "https://www.ahoom.cn/feed/"
+            "https://www.javaboy.org/atom.xml"
+            "http://blog.didispace.com/atom.xml"
+            ;"http://feeds.dzone.com/java"
+            ;"http://feeds.dzone.com/microservices"
+            "https://www.yybxs.cn/feed"
+            "http://www.54tianzhisheng.cn/atom.xml"
+            "https://www.cnkirito.moe/atom.xml"
+            "http://timd.cn/rss/"
+            "https://brantou.github.io/atom.xml"
+            "https://blog.joway.io/index.xml"
+            "http://feed.cnblogs.com/blog/u/534487/rss/"
+            "https://blog.csdn.net/shenjian58/rss/list"
+            "https://www.imtqy.com/feed"
+            "http://ifeve.com/feed/"
+            "https://blog.codinglabs.org/rss.xml"
+            "http://blog.hacking.pub/rss/"
+            "https://draveness.me/feed.xml"
+            "http://www.leviathan.vip/atom.xml"
+            "http://ningg.top/atom.xml"
+            "https://harttle.land/feed.xml"
+            "https://liutos.github.io/atom.xml"
+            "https://reverland.org/archive.xml"
+            )
+          )
+    (setq elfeed-curl-timeout 180)
+    )
+#+end_src   
+* xwwp-follow-link-helm
+#+begin_src emacs-lisp
+(use-package xwwp-follow-link-helm
+  :ensure t)
+#+end_src
+* rfc-mode
+#+begin_src emacs-lisp
+  (use-package rfc-mode
+    :ensure t)
+#+end_src
+* ace-window
+#+begin_src emacs-lisp    
+(global-set-key (kbd "M-o") 'ace-window)
+#+end_src   
+* youdao
+#+begin_src emacs-lisp
+  (use-package youdao-dictionary
+    :ensure t
+    :config
+    ;; Enable Cache
+    (setq url-automatic-caching t)
+    ;; Example Key binding
+    (global-set-key (kbd "C-c y") 'youdao-dictionary-search-at-point)
+    )
+#+end_src
+* pinyin
+#+begin_src emacs-lisp    
+  (use-package pyim
+    :ensure t
+    :demand t
+    :config
+    ;; 激活 basedict 拼音词库，五笔用户请继续阅读 README
+    (use-package pyim-basedict
+      :ensure t
+      :config (pyim-basedict-enable))
+
+    (setq default-input-method "pyim")
+
+    ;; 开启拼音搜索功能
+    (pyim-isearch-mode 1)
+
+    ;; 使用 popup-el 来绘制选词框, 如果用 emacs26, 建议设置
+    ;; 为 'posframe, 速度很快并且菜单不会变形，不过需要用户
+    ;; 手动安装 posframe 包。
+    (setq pyim-page-tooltip 'popup)
+
+    ;; 选词框显示5个候选词
+    (setq pyim-page-length 5))
+#+end_src   
+* dumb-jump
+#+begin_src emacs-lisp
+  (use-package dumb-jump
+    :ensure t
+    :config
+    (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
+    (setq dumb-jump-project "/Users/shenxingyu/repositories")
+    (setq dumb-jump-force-searcher 'rg))
+#+end_src
