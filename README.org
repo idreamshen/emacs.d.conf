@@ -1,0 +1,1 @@
+/Users/shenxingyu/.emacs.d/init-core.org
